@@ -1,13 +1,29 @@
 'use client';
-export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
-type Listing = { id: string; title: string; description?: string|null; start_price: number; currency?: string; seller_name?: string; };
+type Listing = {
+  id: string;
+  title: string;
+  description?: string | null;
+  start_price: number;
+  min_price: number;
+  market_value?: number | null;
+  currency?: string;
+  seller_name?: string;
+  status?: string;
+};
 
 export default function ListingsAdmin() {
   const [rows, setRows] = useState<Listing[]>([]);
-  const [msg, setMsg] = useState<string|null>(null);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const load = async () => {
     const r = await fetch('/api/admin/listings', { cache: 'no-store' });
@@ -15,51 +31,179 @@ export default function ListingsAdmin() {
     setRows(j.rows ?? []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault(); setMsg(null);
+    e.preventDefault();
+    setLoading(true);
+
     const fd = new FormData(e.currentTarget);
     const body = {
       title: fd.get('title'),
       description: fd.get('description'),
       start_price: Number(fd.get('start_price')),
+      min_price: Number(fd.get('min_price')),
+      market_value: fd.get('market_value') ? Number(fd.get('market_value')) : null,
       currency: (fd.get('currency') as string) || 'EUR',
-      seller_name: (fd.get('seller_name') as string) || null
+      seller_name: (fd.get('seller_name') as string) || null,
+      status: 'active',
     };
+
     const r = await fetch('/api/admin/listings', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
+
     const j = await r.json();
-    if (!r.ok) { setMsg(j.error || 'Failed'); return; }
-    setMsg('Saved'); (e.target as HTMLFormElement).reset(); load();
+    setLoading(false);
+
+    if (!r.ok) {
+      toast({ title: 'Error', description: j.error || 'Failed to save', variant: 'destructive' });
+      return;
+    }
+
+    toast({ title: 'Success', description: 'Listing created successfully' });
+    (e.target as HTMLFormElement).reset();
+    load();
   };
 
   return (
-    <div className="p-6 max-w-2xl">
-      <h2 className="text-xl font-semibold mb-3">Listings</h2>
-      <form onSubmit={onSubmit} className="grid gap-2 mb-6">
-        <input name="title" placeholder="Title" className="border p-2" required />
-        <textarea name="description" placeholder="Description" className="border p-2" />
-        <input name="start_price" type="number" step="0.01" placeholder="Start price" className="border p-2" required />
-        <input name="currency" placeholder="Currency (EUR)" className="border p-2" />
-        <input name="seller_name" placeholder="Seller name (visible to buyers)" className="border p-2" />
-        <button className="border p-2">Save</button>
-        {msg && <p className="text-sm">{msg}</p>}
-      </form>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-4xl font-bold text-granite-900">Manage Listings</h1>
+        <p className="text-muted-foreground mt-2">Create and manage auction listings</p>
+      </div>
 
-      <ul className="space-y-2">
-        {rows.map(r => (
-          <li key={r.id} className="border p-2 rounded">
-            <div className="font-medium">{r.title}</div>
-            {r.description && <div className="text-sm opacity-80">{r.description}</div>}
-            <div className="text-sm">Start: {r.start_price} {r.currency ?? 'EUR'}</div>
-            {r.seller_name && <div className="text-sm">Verkoper: {r.seller_name}</div>}
-          </li>
-        ))}
-      </ul>
+      <Card>
+        <CardHeader>
+          <CardTitle>Create New Listing</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input id="title" name="title" placeholder="Auction title" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Detailed description"
+                rows={4}
+              />
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_price">Start Price * (€)</Label>
+                <Input
+                  id="start_price"
+                  name="start_price"
+                  type="number"
+                  step="0.01"
+                  placeholder="26000"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="min_price">Min Price * (€)</Label>
+                <Input
+                  id="min_price"
+                  name="min_price"
+                  type="number"
+                  step="0.01"
+                  placeholder="16000"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="market_value">Market Value (€)</Label>
+                <Input
+                  id="market_value"
+                  name="market_value"
+                  type="number"
+                  step="0.01"
+                  placeholder="20000"
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Input id="currency" name="currency" placeholder="EUR" defaultValue="EUR" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="seller_name">Seller Name</Label>
+                <Input id="seller_name" name="seller_name" placeholder="Company or person name" />
+              </div>
+            </div>
+
+            <Button type="submit" variant="accent" disabled={loading}>
+              {loading ? 'Creating...' : 'Create Listing'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Listings ({rows.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {rows.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No listings yet</p>
+          ) : (
+            <div className="space-y-3">
+              {rows.map((r) => (
+                <Card key={r.id}>
+                  <CardContent className="py-4">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-lg">{r.title}</div>
+                        {r.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {r.description}
+                          </p>
+                        )}
+                        <div className="flex gap-4 text-sm">
+                          <span>
+                            Start: €{r.start_price.toLocaleString('nl-NL')}
+                          </span>
+                          <span>
+                            Min: €{r.min_price.toLocaleString('nl-NL')}
+                          </span>
+                          {r.market_value && (
+                            <span>
+                              Market: €{r.market_value.toLocaleString('nl-NL')}
+                            </span>
+                          )}
+                        </div>
+                        {r.seller_name && (
+                          <div className="text-sm text-muted-foreground">
+                            Seller: {r.seller_name}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs px-2 py-1 bg-accent-100 text-accent-700 rounded">
+                        {r.status || 'draft'}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

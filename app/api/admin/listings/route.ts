@@ -8,7 +8,7 @@ export async function GET() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('listings')
-      .select('id, title, description, start_price, currency, seller_id, seller_name')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(100);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -21,8 +21,11 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { title, description, start_price, currency, seller_name } = body;
-    if (!title || !start_price) return NextResponse.json({ error: 'title and start_price required' }, { status: 400 });
+    const { title, description, start_price, min_price, market_value, currency, seller_name, status } = body;
+
+    if (!title || !start_price || !min_price) {
+      return NextResponse.json({ error: 'title, start_price, and min_price required' }, { status: 400 });
+    }
 
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -31,9 +34,12 @@ export async function POST(req: Request) {
         title,
         description: description ?? null,
         start_price,
+        min_price,
+        market_value: market_value ?? null,
         currency: currency ?? 'EUR',
         seller_id: null,
-        seller_name: seller_name ?? null
+        seller_name: seller_name ?? null,
+        status: status ?? 'draft',
       })
       .select('id')
       .single();
