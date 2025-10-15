@@ -1,11 +1,24 @@
 export const dynamic = 'force-dynamic';
 
+import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { PackagePlus, Gavel, FileText, Truck } from 'lucide-react';
 
+async function checkAdminAccess() {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !isAdmin(user.email)) {
+      redirect('/?error=unauthorized');
+    }
+    return user;
+  } catch (error) {
+    redirect('/auth/signin');
+  }
+}
 async function getDashboardStats() {
   try {
     const supabase = getSupabaseAdmin();
@@ -34,13 +47,17 @@ async function getDashboardStats() {
 }
 
 export default async function AdminDashboard() {
+  // Check admin access first
+  const user = await checkAdminAccess();
   const stats = await getDashboardStats();
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-4xl font-bold text-granite-900">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Manage your auction marketplace</p>
+        <p className="text-muted-foreground mt-2">
+          Welcome {user.email} - Manage your auction marketplace
+        </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">

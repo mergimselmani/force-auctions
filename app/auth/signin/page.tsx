@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
@@ -19,6 +20,8 @@ export default function SignInPage() {
   const { signIn } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +51,8 @@ export default function SignInPage() {
           title: 'Welcome back!',
           description: 'You have been signed in successfully.',
         });
-        router.push('/');
+        // Redirect to the original destination or home
+        router.push(redirectTo || '/');
       }
     } catch (error) {
       toast({

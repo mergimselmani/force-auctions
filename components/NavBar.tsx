@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
+import { isAdmin } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { useState } from 'react';
 export default function NavBar() {
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const userIsAdmin = user?.email ? isAdmin(user.email) : false;
 
   return (
     <nav className="w-full border-b bg-background sticky top-0 z-50">
@@ -28,7 +30,7 @@ export default function NavBar() {
             <Link href="/transport" className="text-sm font-medium hover:text-accent-600 transition-colors">
               Transport
             </Link>
-            {user && (
+            {userIsAdmin && (
               <Link href="/admin/dashboard" className="text-sm font-medium hover:text-accent-600 transition-colors">
                 Admin
               </Link>
@@ -88,7 +90,7 @@ export default function NavBar() {
             >
               Transport
             </Link>
-            {user && (
+            {userIsAdmin && (
               <Link
                 href="/admin/dashboard"
                 className="block text-sm font-medium hover:text-accent-600 transition-colors py-2"

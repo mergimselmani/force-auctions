@@ -28,4 +28,3 @@ export async function checkUserRole(email?: string | null) {
   if (!email) return 'consumer';
   if (isAdmin(email)) return 'admin';
   return 'consumer';
-}

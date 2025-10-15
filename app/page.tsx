@@ -1,11 +1,13 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, TrendingDown, Shield, Truck } from 'lucide-react';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import DutchAuctionClock from '@/components/DutchAuctionClock';
+import UnauthorizedAlert from '@/components/UnauthorizedAlert';
 
 async function getFeaturedListings() {
   try {
@@ -28,6 +30,10 @@ export default async function Home() {
 
   return (
     <div className="space-y-16">
+      <Suspense fallback={null}>
+        <UnauthorizedAlert />
+      </Suspense>
+      
       <section className="py-20 text-center space-y-6">
         <h1 className="text-5xl md:text-6xl font-bold text-granite-900 tracking-tight">
           Dutch Auction Marketplace
