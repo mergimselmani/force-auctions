@@ -57,6 +57,11 @@ export default async function AuctionPage({ params }: { params: { id: string } }
             currency={listing.currency || 'EUR'}
             stepSchedule={stepSchedule}
             autoStart={true}
+            listingId={listing.id}
+            onBuy={(price) => {
+              // Optional: Add any additional client-side logic after purchase
+              console.log(`Item purchased for €${price}`);
+            }}
           />
         </div>
 

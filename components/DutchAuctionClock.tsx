@@ -18,6 +18,7 @@ interface Props {
   stepSchedule?: StepSchedule[];
   onBuy?: (price: number) => void;
   autoStart?: boolean;
+  listingId?: string;
 }
 
 const DEFAULT_STEP_SCHEDULE: StepSchedule[] = [
@@ -37,10 +38,12 @@ export default function DutchAuctionClock({
   stepSchedule = DEFAULT_STEP_SCHEDULE,
   onBuy,
   autoStart = true,
+  listingId,
 }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [isRunning, setIsRunning] = useState(autoStart);
   const [isSold, setIsSold] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (!isRunning || isSold) return;
@@ -95,10 +98,47 @@ export default function DutchAuctionClock({
   }, [marketValue, minPrice, startPrice]);
 
   const handleBuy = () => {
-    if (isSold || !isRunning) return;
-    setIsSold(true);
-    setIsRunning(false);
-    onBuy?.(currentPrice);
+    if (isSold || !isRunning || isProcessing) return;
+    
+    setIsProcessing(true);
+    
+    // If listingId is provided, make API call to persist the sale
+    if (listingId) {
+      fetch(`/api/auction/${listingId}/buy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sold_price: currentPrice,
+        }),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to complete purchase');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          setIsSold(true);
+          setIsRunning(false);
+          onBuy?.(currentPrice);
+        })
+        .catch((error) => {
+          console.error('Error completing purchase:', error);
+          alert('Failed to complete purchase. Please try again.');
+        })
+        .finally(() => {
+          setIsProcessing(false);
+        });
+    } else {
+      // Fallback for demo mode without persistence
+      setIsSold(true);
+      setIsRunning(false);
+      onBuy?.(currentPrice);
+      setIsProcessing(false);
+    }
   };
 
   const circumference = 2 * Math.PI * 90;
@@ -179,7 +219,7 @@ export default function DutchAuctionClock({
         </div>
 
         <div className="w-full space-y-2">
-          {isRunning && !isSold && currentPrice > minPrice && (
+          {isRunning && !isSold && currentPrice > minPrice && !isProcessing && (
             <Button
               onClick={handleBuy}
               size="lg"
@@ -188,6 +228,17 @@ export default function DutchAuctionClock({
             >
               Take it for {currency === 'EUR' ? '€' : currency}{' '}
               {currentPrice.toLocaleString('nl-NL')}
+            </Button>
+          )}
+
+          {isProcessing && (
+            <Button
+              size="lg"
+              variant="accent"
+              className="w-full text-lg font-bold"
+              disabled
+            >
+              Processing...
             </Button>
           )}
 
