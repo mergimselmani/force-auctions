@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 
 export function getAuthClient() {
   if (typeof window === 'undefined') {
