@@ -2,8 +2,6 @@
   "/transport/page": "app/transport/page.js",
   "/admin/listings/page": "app/admin/listings/page.js",
   "/page": "app/page.js",
-  "/pricing/page": "app/pricing/page.js",
   "/auctions/page": "app/auctions/page.js",
-  "/admin/dashboard/page": "app/admin/dashboard/page.js",
-  "/api/admin/listings/route": "app/api/admin/listings/route.js"
+  "/admin/dashboard/page": "app/admin/dashboard/page.js"
 }
